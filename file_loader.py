@@ -83,11 +83,11 @@ def load_file(file_path, filename):
         text = pytesseract.image_to_string(image)
 
         return [Document(page_content=text or "No text found")]
-    elif ext in [".png", ".jpg", ".jpeg"]:
-        return [Document(
-    page_content="Image uploaded. OCR disabled in cloud deployment.",
-    metadata={"source": filename}
-    )]
+    # elif ext in [".png", ".jpg", ".jpeg"]:
+    #     return [Document(
+    # page_content="Image uploaded. OCR disabled in cloud deployment.",
+    # metadata={"source": filename}
+    # )]
     # elif ext in [".png", ".jpg", ".jpeg"]:
 
     #     processed = preprocess_image(file_path)
