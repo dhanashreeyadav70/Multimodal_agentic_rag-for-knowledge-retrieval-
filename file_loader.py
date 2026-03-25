@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from PIL import Image
 import pytesseract
-import whisper
+
 import cv2
 import fitz  # PyMuPDF
 
