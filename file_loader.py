@@ -91,8 +91,11 @@ def load_file(file_path, filename):
     # ---------- VIDEO ----------
     elif ext in [".mp4", ".avi"]:
         return [Document(
-            page_content="VIDEO_FILE",
-            metadata={"source": filename, "type": "video"}
+            page_content="Video uploaded",
+            metadata={
+                "source": filename,
+                "type": "video"
+            }
         )]
 
     # ---------- AUDIO ----------
