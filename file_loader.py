@@ -3,8 +3,7 @@ import pandas as pd
 from PIL import Image
 import pytesseract
 import shutil
-
-import fitz  # PyMuPDF
+import fitz
 
 from langchain_community.document_loaders import (
     TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
@@ -12,8 +11,7 @@ from langchain_community.document_loaders import (
 from langchain_core.documents import Document
 from ingestion import load_json
 
-
-# ✅ Auto-detect tesseract (works locally + cloud)
+# Auto detect tesseract
 tesseract_path = shutil.which("tesseract")
 if tesseract_path:
     pytesseract.pytesseract.tesseract_cmd = tesseract_path
@@ -25,15 +23,12 @@ def load_file(file_path, filename):
 
     # ---------- PDF ----------
     if ext == ".pdf":
-
         doc = fitz.open(file_path)
         documents = []
 
         for i, page in enumerate(doc):
-
             text = page.get_text()
 
-            # OCR fallback (SAFE)
             if not text.strip():
                 try:
                     pix = page.get_pixmap()
@@ -65,7 +60,6 @@ def load_file(file_path, filename):
 
     # ---------- CSV ----------
     elif ext == ".csv":
-
         df = pd.read_csv(file_path)
         documents = []
 
@@ -78,7 +72,6 @@ def load_file(file_path, filename):
             row_text = ", ".join(
                 [f"{col}: {row[col]}" for col in df.columns if pd.notna(row[col])]
             )
-
             documents.append(Document(page_content=row_text))
 
         return documents
@@ -88,45 +81,26 @@ def load_file(file_path, filename):
         try:
             image = Image.open(file_path)
             text = pytesseract.image_to_string(image)
-
             if not text.strip():
-                text = "Image uploaded. No readable text detected."
-
+                text = "No readable text detected in image."
         except:
-            text = "Image uploaded. OCR not supported in this environment."
+            text = "Image uploaded. OCR not supported."
 
         return [Document(page_content=text, metadata={"source": filename})]
+
+    # ---------- VIDEO ----------
+    elif ext in [".mp4", ".avi"]:
+        return [Document(
+            page_content="VIDEO_FILE",
+            metadata={"source": filename, "type": "video"}
+        )]
 
     # ---------- AUDIO ----------
     elif ext in [".mp3", ".wav"]:
         return [Document(
-            page_content="Audio uploaded. Transcription disabled in cloud deployment.",
-            metadata={"source": filename}
+            page_content="AUDIO_FILE",
+            metadata={"source": filename, "type": "audio"}
         )]
-
-    # ---------- VIDEO ----------
-    # elif ext in [".mp4", ".avi"]:
-    #     return [Document(
-    #         page_content="Video uploaded. Processing disabled in cloud deployment.",
-    #         metadata={"source": filename}
-    #     )]
-    elif ext in [".mp4", ".avi"]:
-        return [Document(
-        page_content="""
-Video file uploaded.
-
-⚠️ Direct video processing is not supported in this deployment.
-
-To analyze this video, you can:
-1. Upload subtitles (.srt) or transcript
-2. Provide a summary of the video
-3. Upload extracted frames/images
-4. Upload audio separately (.mp3/.wav)
-
-If transcript is provided, I can summarize, analyze, and extract insights.
-""",
-        metadata={"source": filename, "type": "video"}
-    )]
 
     # ---------- FALLBACK ----------
     else:
