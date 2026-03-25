@@ -77,16 +77,37 @@ def load_file(file_path, filename):
         return documents
 
     # ---------- IMAGE ----------
+    # elif ext in [".png", ".jpg", ".jpeg"]:
+    #     try:
+    #         image = Image.open(file_path)
+    #         text = pytesseract.image_to_string(image)
+    #         if not text.strip():
+    #             text = "No readable text detected in image."
+    #     except:
+    #         text = "Image uploaded. OCR not supported."
+
+    #     return [Document(page_content=text, metadata={"source": filename})]
     elif ext in [".png", ".jpg", ".jpeg"]:
         try:
             image = Image.open(file_path)
             text = pytesseract.image_to_string(image)
-            if not text.strip():
-                text = "No readable text detected in image."
+    
+            if text and text.strip():
+                return [Document(
+                    page_content=text,
+                    metadata={"source": filename, "type": "image_text"}
+                )]
+            else:
+                return [Document(
+                    page_content="NO_TEXT_IN_IMAGE",
+                    metadata={"source": filename, "type": "image"}
+                )]
+    
         except:
-            text = "Image uploaded. OCR not supported."
-
-        return [Document(page_content=text, metadata={"source": filename})]
+            return [Document(
+                page_content="OCR_FAILED",
+                metadata={"source": filename, "type": "image"}
+            )]
 
     # ---------- VIDEO ----------
     elif ext in [".mp4", ".avi"]:
