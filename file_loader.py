@@ -83,11 +83,23 @@ def load_file(file_path, filename):
     #     text = pytesseract.image_to_string(image)
 
     #     return [Document(page_content=text or "No text found")]
+    # elif ext in [".png", ".jpg", ".jpeg"]:
+    #     return [Document(
+    # page_content="Image uploaded. OCR disabled in cloud deployment.",
+    # metadata={"source": filename}
+    # )]
     elif ext in [".png", ".jpg", ".jpeg"]:
-        return [Document(
-    page_content="Image uploaded. OCR disabled in cloud deployment.",
-    metadata={"source": filename}
-    )]
+
+        processed = preprocess_image(file_path)
+        text = pytesseract.image_to_string(processed)
+
+        if not text.strip():
+            text = "Image uploaded. No readable text detected. Likely a photo."
+
+        return [Document(page_content=text)]
+
+    else:
+        raise ValueError(f"Unsupported file type: {ext}")
 
     # ---------- AUDIO ----------
     # elif ext in [".mp3", ".wav"]:
