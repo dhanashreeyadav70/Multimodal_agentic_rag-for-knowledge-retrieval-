@@ -105,11 +105,28 @@ def load_file(file_path, filename):
         )]
 
     # ---------- VIDEO ----------
+    # elif ext in [".mp4", ".avi"]:
+    #     return [Document(
+    #         page_content="Video uploaded. Processing disabled in cloud deployment.",
+    #         metadata={"source": filename}
+    #     )]
     elif ext in [".mp4", ".avi"]:
         return [Document(
-            page_content="Video uploaded. Processing disabled in cloud deployment.",
-            metadata={"source": filename}
-        )]
+        page_content="""
+Video file uploaded.
+
+⚠️ Direct video processing is not supported in this deployment.
+
+To analyze this video, you can:
+1. Upload subtitles (.srt) or transcript
+2. Provide a summary of the video
+3. Upload extracted frames/images
+4. Upload audio separately (.mp3/.wav)
+
+If transcript is provided, I can summarize, analyze, and extract insights.
+""",
+        metadata={"source": filename, "type": "video"}
+    )]
 
     # ---------- FALLBACK ----------
     else:
