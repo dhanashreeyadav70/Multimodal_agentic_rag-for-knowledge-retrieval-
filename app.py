@@ -65,4 +65,3 @@ if query:
         answer = result.get("answer", "No response")
 
         st.chat_message("assistant").write(answer)
-
