@@ -45,27 +45,35 @@ def answer_agent(state):
             "sources": []
         }
 
-    # ✅ DETECT VIDEO USING METADATA (ROBUST FIX)
+    # ✅ VIDEO
     if any(d.metadata.get("type") == "video" for d in docs):
         return {
             **state,
-            "answer": "📹 Video uploaded successfully.\n\n"
-                      "Currently, video analysis is not supported in this deployment.\n\n"
-                      "👉 To analyze the video, please upload ONE of the following:\n"
-                      "• Transcript (.txt / .srt)\n"
-                      "• Audio (.mp3 / .wav)\n"
-                      "• Screenshots/images\n\n"
-                      "Once provided, I can summarize and extract insights.",
+            "answer": "📹 Video uploaded.\n\n"
+                      "Please upload transcript/audio/screenshots for analysis.",
             "sources": []
         }
 
-    # ✅ AUDIO (OPTIONAL)
-    if any(d.metadata.get("type") == "audio" for d in docs):
+    # ✅ IMAGE WITH NO TEXT
+    if any(d.page_content == "NO_TEXT_IN_IMAGE" for d in docs):
         return {
             **state,
-            "answer": "🎵 Audio uploaded.\n\n"
-                      "Transcription is not enabled in this deployment.\n"
-                      "Please upload transcript for analysis.",
+            "answer": "🖼️ Image uploaded.\n\n"
+                      "No readable text detected in the image.\n\n"
+                      "👉 You can:\n"
+                      "• Upload clearer image\n"
+                      "• Provide description\n"
+                      "• Ask visual-related question",
+            "sources": []
+        }
+
+    # ✅ OCR FAILED
+    if any(d.page_content == "OCR_FAILED" for d in docs):
+        return {
+            **state,
+            "answer": "🖼️ Image uploaded.\n\n"
+                      "Text extraction failed.\n"
+                      "Try uploading a clearer image.",
             "sources": []
         }
 
