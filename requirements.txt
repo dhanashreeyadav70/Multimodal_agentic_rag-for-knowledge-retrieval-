@@ -15,6 +15,5 @@ langchain-text-splitters
 
 pytesseract
 pillow
-openai-whisper
-opencv-python
+opencv-python-headless
 pymupdf
