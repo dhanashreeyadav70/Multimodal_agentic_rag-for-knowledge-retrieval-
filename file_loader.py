@@ -2,18 +2,23 @@ import os
 import pandas as pd
 from PIL import Image
 import pytesseract
-
 import cv2
 import fitz  # PyMuPDF
 
 from langchain_community.document_loaders import (
-    PyPDFLoader, TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
+    TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
 )
 from langchain_core.documents import Document
 from ingestion import load_json
 
-# ✅ SET PATH (Windows)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Users\16020\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+# -------------------------------
+# SAFE OCR FUNCTION
+# -------------------------------
+def safe_ocr(image):
+    try:
+        return pytesseract.image_to_string(image)
+    except Exception:
+        return ""
 
 
 def load_file(file_path, filename):
@@ -30,17 +35,22 @@ def load_file(file_path, filename):
 
             text = page.get_text()
 
-            # OCR fallback
+            # OCR fallback (SAFE)
             if not text.strip():
                 pix = page.get_pixmap()
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                text = pytesseract.image_to_string(img)
 
-            if text.strip():
-                documents.append(Document(
-                    page_content=text,
-                    metadata={"source": filename, "page": i}
-                ))
+                ocr_text = safe_ocr(img)
+
+                if ocr_text.strip():
+                    text = ocr_text
+                else:
+                    text = "Scanned PDF page (no readable text detected)"
+
+            documents.append(Document(
+                page_content=text,
+                metadata={"source": filename, "page": i}
+            ))
 
         return documents
 
@@ -79,42 +89,22 @@ def load_file(file_path, filename):
 
     # ---------- IMAGE ----------
     elif ext in [".png", ".jpg", ".jpeg"]:
+
         image = Image.open(file_path)
-        text = pytesseract.image_to_string(image)
 
-        return [Document(page_content=text or "No text found")]
-    # elif ext in [".png", ".jpg", ".jpeg"]:
-    #     return [Document(
-    # page_content="Image uploaded. OCR disabled in cloud deployment.",
-    # metadata={"source": filename}
-    # )]
-    # elif ext in [".png", ".jpg", ".jpeg"]:
+        text = safe_ocr(image)
 
-    #     processed = preprocess_image(file_path)
-    #     text = pytesseract.image_to_string(processed)
+        if not text.strip():
+            text = "Image uploaded. No readable text detected."
 
-    #     if not text.strip():
-    #         text = "Image uploaded. No readable text detected. Likely a photo."
-
-    #     return [Document(page_content=text)]
-
-    # else:
-    #     raise ValueError(f"Unsupported file type: {ext}")
-
-    # ---------- AUDIO ----------
-    # elif ext in [".mp3", ".wav"]:
-    #     model = whisper.load_model("base")
-    #     result = model.transcribe(file_path)
-
-    #     return [Document(page_content=result["text"])]
-    # elif ext in [".mp3", ".wav"]:
-    #     return [Document(
-    #     page_content="Audio file uploaded. Transcription not supported in this deployment.",
-    #     metadata={"source": filename, "type": "audio"}
-    # )]
+        return [Document(
+            page_content=text,
+            metadata={"source": filename}
+        )]
 
     # ---------- VIDEO ----------
     elif ext in [".mp4", ".avi"]:
+
         cap = cv2.VideoCapture(file_path)
         texts = []
         count = 0
@@ -126,7 +116,8 @@ def load_file(file_path, filename):
 
             if count % 30 == 0:
                 img = Image.fromarray(frame)
-                text = pytesseract.image_to_string(img)
+                text = safe_ocr(img)
+
                 if text.strip():
                     texts.append(text)
 
@@ -134,7 +125,10 @@ def load_file(file_path, filename):
 
         cap.release()
 
-        return [Document(page_content=" ".join(texts))]
+        return [Document(
+            page_content=" ".join(texts) if texts else "No readable content in video",
+            metadata={"source": filename}
+        )]
 
     else:
         raise ValueError(f"Unsupported file type: {ext}")
