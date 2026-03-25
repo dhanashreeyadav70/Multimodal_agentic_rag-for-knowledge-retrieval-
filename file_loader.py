@@ -78,11 +78,16 @@ def load_file(file_path, filename):
         return documents
 
     # ---------- IMAGE ----------
-    elif ext in [".png", ".jpg", ".jpeg"]:
-        image = Image.open(file_path)
-        text = pytesseract.image_to_string(image)
+    # elif ext in [".png", ".jpg", ".jpeg"]:
+    #     image = Image.open(file_path)
+    #     text = pytesseract.image_to_string(image)
 
-        return [Document(page_content=text or "No text found")]
+    #     return [Document(page_content=text or "No text found")]
+    elif ext in [".png", ".jpg", ".jpeg"]:
+    return [Document(
+        page_content="Image uploaded. OCR disabled in cloud deployment.",
+        metadata={"source": filename}
+    )]
 
     # ---------- AUDIO ----------
     elif ext in [".mp3", ".wav"]:
