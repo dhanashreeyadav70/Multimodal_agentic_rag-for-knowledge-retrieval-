@@ -95,11 +95,11 @@ def load_file(file_path, filename):
     #     result = model.transcribe(file_path)
 
     #     return [Document(page_content=result["text"])]
-    elif ext in [".mp3", ".wav"]:
-        return [Document(
-        page_content="Audio file uploaded. Transcription not supported in this deployment.",
-        metadata={"source": filename, "type": "audio"}
-    )]
+    # elif ext in [".mp3", ".wav"]:
+    #     return [Document(
+    #     page_content="Audio file uploaded. Transcription not supported in this deployment.",
+    #     metadata={"source": filename, "type": "audio"}
+    # )]
 
     # ---------- VIDEO ----------
     elif ext in [".mp4", ".avi"]:
