@@ -43,6 +43,8 @@ if uploaded_file:
         st.session_state.retriever = retriever
 
         st.success(f"{uploaded_file.name} loaded successfully")
+        if uploaded_file.name.endswith((".mp4", ".avi")):
+            st.info("📹 Video uploaded. Upload transcript/audio for best results.")
 
     except Exception as e:
         st.error(f"❌ Error: {str(e)}")
