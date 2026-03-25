@@ -2,18 +2,21 @@ import os
 import pandas as pd
 from PIL import Image
 import pytesseract
-import whisper
-import cv2
+import shutil
+
 import fitz  # PyMuPDF
 
 from langchain_community.document_loaders import (
-    PyPDFLoader, TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
+    TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
 )
 from langchain_core.documents import Document
 from ingestion import load_json
 
-# ✅ SET PATH (Windows)
-pytesseract.pytesseract.tesseract_cmd = r"C:\Users\16020\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+
+# ✅ Auto-detect tesseract (works locally + cloud)
+tesseract_path = shutil.which("tesseract")
+if tesseract_path:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
 
 def load_file(file_path, filename):
@@ -30,11 +33,14 @@ def load_file(file_path, filename):
 
             text = page.get_text()
 
-            # OCR fallback
+            # OCR fallback (SAFE)
             if not text.strip():
-                pix = page.get_pixmap()
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                text = pytesseract.image_to_string(img)
+                try:
+                    pix = page.get_pixmap()
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    text = pytesseract.image_to_string(img)
+                except:
+                    text = ""
 
             if text.strip():
                 documents.append(Document(
@@ -79,40 +85,35 @@ def load_file(file_path, filename):
 
     # ---------- IMAGE ----------
     elif ext in [".png", ".jpg", ".jpeg"]:
-        image = Image.open(file_path)
-        text = pytesseract.image_to_string(image)
+        try:
+            image = Image.open(file_path)
+            text = pytesseract.image_to_string(image)
 
-        return [Document(page_content=text or "No text found")]
+            if not text.strip():
+                text = "Image uploaded. No readable text detected."
+
+        except:
+            text = "Image uploaded. OCR not supported in this environment."
+
+        return [Document(page_content=text, metadata={"source": filename})]
 
     # ---------- AUDIO ----------
     elif ext in [".mp3", ".wav"]:
-        model = whisper.load_model("base")
-        result = model.transcribe(file_path)
-
-        return [Document(page_content=result["text"])]
+        return [Document(
+            page_content="Audio uploaded. Transcription disabled in cloud deployment.",
+            metadata={"source": filename}
+        )]
 
     # ---------- VIDEO ----------
     elif ext in [".mp4", ".avi"]:
-        cap = cv2.VideoCapture(file_path)
-        texts = []
-        count = 0
+        return [Document(
+            page_content="Video uploaded. Processing disabled in cloud deployment.",
+            metadata={"source": filename}
+        )]
 
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            if count % 30 == 0:
-                img = Image.fromarray(frame)
-                text = pytesseract.image_to_string(img)
-                if text.strip():
-                    texts.append(text)
-
-            count += 1
-
-        cap.release()
-
-        return [Document(page_content=" ".join(texts))]
-
+    # ---------- FALLBACK ----------
     else:
-        raise ValueError(f"Unsupported file type: {ext}")
+        return [Document(
+            page_content=f"Unsupported file type: {ext}",
+            metadata={"source": filename}
+        )]
