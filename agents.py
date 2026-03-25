@@ -37,25 +37,26 @@ def answer_agent(state):
             "sources": []
         }
 
-    # ✅ VIDEO HANDLING (NO LLM CALL)
-    if any(d.page_content == "VIDEO_FILE" for d in docs):
+    # ✅ DETECT VIDEO USING METADATA (ROBUST FIX)
+    if any(d.metadata.get("type") == "video" for d in docs):
         return {
             **state,
             "answer": "📹 Video uploaded successfully.\n\n"
-                      "Currently, video analysis is not supported.\n\n"
-                      "👉 To proceed, please upload:\n"
-                      "- Transcript (.txt/.srt)\n"
-                      "- Audio (.mp3/.wav)\n"
-                      "- Screenshots/images\n\n"
-                      "Then I can summarize and analyze it.",
+                      "Currently, video analysis is not supported in this deployment.\n\n"
+                      "👉 To analyze the video, please upload ONE of the following:\n"
+                      "• Transcript (.txt / .srt)\n"
+                      "• Audio (.mp3 / .wav)\n"
+                      "• Screenshots/images\n\n"
+                      "Once provided, I can summarize and extract insights.",
             "sources": []
         }
 
-    # ✅ AUDIO HANDLING
-    if any(d.page_content == "AUDIO_FILE" for d in docs):
+    # ✅ AUDIO (OPTIONAL)
+    if any(d.metadata.get("type") == "audio" for d in docs):
         return {
             **state,
-            "answer": "🎵 Audio uploaded.\n\nTranscription not enabled.\n"
+            "answer": "🎵 Audio uploaded.\n\n"
+                      "Transcription is not enabled in this deployment.\n"
                       "Please upload transcript for analysis.",
             "sources": []
         }
@@ -68,8 +69,6 @@ def answer_agent(state):
         "answer": generate_answer(state["query"], context),
         "sources": [d.metadata for d in docs]
     }
-
-
 
 def recommendation_agent(state):
 
