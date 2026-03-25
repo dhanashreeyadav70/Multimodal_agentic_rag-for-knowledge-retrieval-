@@ -31,8 +31,36 @@ def answer_agent(state):
     docs = state.get("reranked_docs", [])
 
     if not docs:
-        return {**state, "answer": "No relevant info found", "sources": []}
+        return {
+            **state,
+            "answer": "No relevant information found.",
+            "sources": []
+        }
 
+    # ✅ VIDEO HANDLING (NO LLM CALL)
+    if any(d.page_content == "VIDEO_FILE" for d in docs):
+        return {
+            **state,
+            "answer": "📹 Video uploaded successfully.\n\n"
+                      "Currently, video analysis is not supported.\n\n"
+                      "👉 To proceed, please upload:\n"
+                      "- Transcript (.txt/.srt)\n"
+                      "- Audio (.mp3/.wav)\n"
+                      "- Screenshots/images\n\n"
+                      "Then I can summarize and analyze it.",
+            "sources": []
+        }
+
+    # ✅ AUDIO HANDLING
+    if any(d.page_content == "AUDIO_FILE" for d in docs):
+        return {
+            **state,
+            "answer": "🎵 Audio uploaded.\n\nTranscription not enabled.\n"
+                      "Please upload transcript for analysis.",
+            "sources": []
+        }
+
+    # ✅ NORMAL FLOW
     context = "\n".join([d.page_content for d in docs])
 
     return {
@@ -40,6 +68,7 @@ def answer_agent(state):
         "answer": generate_answer(state["query"], context),
         "sources": [d.metadata for d in docs]
     }
+
 
 
 def recommendation_agent(state):
