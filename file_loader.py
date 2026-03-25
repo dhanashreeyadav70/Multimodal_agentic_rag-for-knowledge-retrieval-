@@ -103,12 +103,12 @@ def load_file(file_path, filename):
             }
         )]
 
-    # # ---------- AUDIO ----------
-    # elif ext in [".mp3", ".wav"]:
-    #     return [Document(
-    #         page_content="AUDIO_FILE",
-    #         metadata={"source": filename, "type": "audio"}
-    #     )]
+    # ---------- AUDIO ----------
+    elif ext in [".mp3", ".wav"]:
+        return [Document(
+            page_content="Audio file uploaded. Transcription not supported in this deployment.",
+            metadata={"source": filename, "type": "audio"}
+        )]
 
     # ---------- FALLBACK ----------
     else:
