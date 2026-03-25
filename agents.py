@@ -6,15 +6,23 @@ def planner_agent(state):
     return state
 
 
+# def retrieval_agent(state):
+
+#     docs = state["retriever"].search(state["query"])
+
+#     if not docs:
+#         return {**state, "retrieved_docs": []}
+
+#     return {**state, "retrieved_docs": docs}
 def retrieval_agent(state):
 
     docs = state["retriever"].search(state["query"])
 
-    if not docs:
-        return {**state, "retrieved_docs": []}
+    # ✅ If video present, skip retrieval logic
+    if any(d.metadata.get("type") == "video" for d in docs):
+        return {**state, "retrieved_docs": docs}
 
-    return {**state, "retrieved_docs": docs}
-
+    return {**state, "retrieved_docs": docs or []}
 
 def reranker_agent(state):
 
