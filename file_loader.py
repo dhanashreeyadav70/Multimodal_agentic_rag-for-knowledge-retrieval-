@@ -84,9 +84,9 @@ def load_file(file_path, filename):
 
     #     return [Document(page_content=text or "No text found")]
     elif ext in [".png", ".jpg", ".jpeg"]:
-    return [Document(
-        page_content="Image uploaded. OCR disabled in cloud deployment.",
-        metadata={"source": filename}
+        return [Document(
+    page_content="Image uploaded. OCR disabled in cloud deployment.",
+    metadata={"source": filename}
     )]
 
     # ---------- AUDIO ----------
