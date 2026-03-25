@@ -1,4 +1,4 @@
-﻿streamlit
+streamlit
 langchain
 langchain-core
 langchain-community
@@ -15,6 +15,5 @@ langchain-text-splitters
 
 pytesseract
 pillow
-openai-whisper
-opencv-python
-pdf2image
+opencv-python-headless
+pymupdf
