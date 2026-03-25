@@ -2,23 +2,18 @@ import os
 import pandas as pd
 from PIL import Image
 import pytesseract
+import whisper
 import cv2
 import fitz  # PyMuPDF
 
 from langchain_community.document_loaders import (
-    TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
+    PyPDFLoader, TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
 )
 from langchain_core.documents import Document
 from ingestion import load_json
 
-# -------------------------------
-# SAFE OCR FUNCTION
-# -------------------------------
-def safe_ocr(image):
-    try:
-        return pytesseract.image_to_string(image)
-    except Exception:
-        return ""
+# ✅ SET PATH (Windows)
+pytesseract.pytesseract.tesseract_cmd = r"C:\Users\16020\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
 
 
 def load_file(file_path, filename):
@@ -35,22 +30,17 @@ def load_file(file_path, filename):
 
             text = page.get_text()
 
-            # OCR fallback (SAFE)
+            # OCR fallback
             if not text.strip():
                 pix = page.get_pixmap()
                 img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                text = pytesseract.image_to_string(img)
 
-                ocr_text = safe_ocr(img)
-
-                if ocr_text.strip():
-                    text = ocr_text
-                else:
-                    text = "Scanned PDF page (no readable text detected)"
-
-            documents.append(Document(
-                page_content=text,
-                metadata={"source": filename, "page": i}
-            ))
+            if text.strip():
+                documents.append(Document(
+                    page_content=text,
+                    metadata={"source": filename, "page": i}
+                ))
 
         return documents
 
@@ -89,22 +79,20 @@ def load_file(file_path, filename):
 
     # ---------- IMAGE ----------
     elif ext in [".png", ".jpg", ".jpeg"]:
-
         image = Image.open(file_path)
+        text = pytesseract.image_to_string(image)
 
-        text = safe_ocr(image)
+        return [Document(page_content=text or "No text found")]
 
-        if not text.strip():
-            text = "Image uploaded. No readable text detected."
+    # ---------- AUDIO ----------
+    elif ext in [".mp3", ".wav"]:
+        model = whisper.load_model("base")
+        result = model.transcribe(file_path)
 
-        return [Document(
-            page_content=text,
-            metadata={"source": filename}
-        )]
+        return [Document(page_content=result["text"])]
 
     # ---------- VIDEO ----------
     elif ext in [".mp4", ".avi"]:
-
         cap = cv2.VideoCapture(file_path)
         texts = []
         count = 0
@@ -116,8 +104,7 @@ def load_file(file_path, filename):
 
             if count % 30 == 0:
                 img = Image.fromarray(frame)
-                text = safe_ocr(img)
-
+                text = pytesseract.image_to_string(img)
                 if text.strip():
                     texts.append(text)
 
@@ -125,10 +112,7 @@ def load_file(file_path, filename):
 
         cap.release()
 
-        return [Document(
-            page_content=" ".join(texts) if texts else "No readable content in video",
-            metadata={"source": filename}
-        )]
+        return [Document(page_content=" ".join(texts))]
 
     else:
         raise ValueError(f"Unsupported file type: {ext}")
