@@ -2,12 +2,16 @@ import os
 import pandas as pd
 from PIL import Image
 import fitz  # PyMuPDF
+import easyocr
 
 from langchain_community.document_loaders import (
     TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
 )
 from langchain_core.documents import Document
 from ingestion import load_json
+
+# ✅ Initialize EasyOCR once
+reader = easyocr.Reader(['en'], gpu=False)
 
 
 def load_file(file_path, filename):
@@ -60,10 +64,18 @@ def load_file(file_path, filename):
 
         return documents
 
-    # ---------- IMAGE (SAFE FALLBACK) ----------
+    # ---------- IMAGE (EasyOCR) ----------
     elif ext in [".png", ".jpg", ".jpeg"]:
+
+        result = reader.readtext(file_path)
+
+        extracted_text = " ".join([text for (_, text, _) in result])
+
+        if not extracted_text.strip():
+            extracted_text = "No text found in image"
+
         return [Document(
-            page_content="Image uploaded. OCR not supported in cloud deployment.",
+            page_content=extracted_text,
             metadata={"source": filename}
         )]
 
