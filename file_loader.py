@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 from PIL import Image
-import pytesseract
 import fitz  # PyMuPDF
 
 from langchain_community.document_loaders import (
@@ -10,8 +9,6 @@ from langchain_community.document_loaders import (
 from langchain_core.documents import Document
 from ingestion import load_json
 
-# ✅ REMOVE HARDCODED PATH
-# pytesseract will work automatically on Streamlit cloud
 
 def load_file(file_path, filename):
 
@@ -24,11 +21,6 @@ def load_file(file_path, filename):
 
         for i, page in enumerate(doc):
             text = page.get_text()
-
-            if not text.strip():
-                pix = page.get_pixmap()
-                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                text = pytesseract.image_to_string(img)
 
             if text.strip():
                 documents.append(Document(
@@ -68,13 +60,12 @@ def load_file(file_path, filename):
 
         return documents
 
-    # ---------- IMAGE ----------
+    # ---------- IMAGE (SAFE FALLBACK) ----------
     elif ext in [".png", ".jpg", ".jpeg"]:
-        image = Image.open(file_path)
-        text = pytesseract.image_to_string(image)
-        return [Document(page_content=text or "No text found")]
-
-    # ❌ REMOVE AUDIO & VIDEO (NOT STREAMLIT FRIENDLY)
+        return [Document(
+            page_content="Image uploaded. OCR not supported in cloud deployment.",
+            metadata={"source": filename}
+        )]
 
     else:
         raise ValueError(f"Unsupported file type: {ext}")
