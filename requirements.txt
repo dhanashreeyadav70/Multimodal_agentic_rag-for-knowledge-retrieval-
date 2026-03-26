@@ -12,6 +12,5 @@ unstructured
 faiss-cpu
 docx2txt
 langchain-text-splitters
-pytesseract
 pillow
 pymupdf
