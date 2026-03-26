@@ -2,7 +2,6 @@ import os
 from groq import Groq
 from prompt_builder import build_dynamic_prompt
 
-# ✅ STREAMLIT SECRET SUPPORT
 api_key = os.getenv("GROQ_API_KEY")
 
 if not api_key:
