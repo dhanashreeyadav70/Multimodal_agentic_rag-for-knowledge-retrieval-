@@ -47,15 +47,17 @@ if uploaded_file and not st.session_state.file_processed:
 
         docs = load_file(file_path, uploaded_file.name)
 
-        # ✅ DEBUG PRINT
-        st.write(f"Loaded {len(docs)} documents")
+        st.write(f"✅ Loaded {len(docs)} documents")
 
         docs = split_documents(docs)
 
-        # ✅ RELAXED VALIDATION
         if not docs:
             st.error("❌ No readable content found")
             st.stop()
+
+        # 🔍 Show extracted text (important for debugging)
+        st.subheader("🔍 Extracted Content Preview")
+        st.write(docs[0].page_content[:500])
 
         vector_db = create_vector_store(docs, uploaded_file.name)
         retriever = HybridRetriever(docs, vector_db)
