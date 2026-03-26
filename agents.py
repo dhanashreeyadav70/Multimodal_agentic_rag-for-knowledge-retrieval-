@@ -34,55 +34,28 @@ def reranker_agent(state):
     return {**state, "reranked_docs": rerank(state["query"], docs)}
 
 
+from memory import get_memory, add_to_memory
+
 def answer_agent(state):
 
     docs = state.get("reranked_docs", [])
 
     if not docs:
-        return {
-            **state,
-            "answer": "No relevant information found.",
-            "sources": []
-        }
+        return {**state, "answer": "No relevant info found", "sources": []}
 
-    # ✅ VIDEO
-    if any(d.metadata.get("type") == "video" for d in docs):
-        return {
-            **state,
-            "answer": "📹 Video uploaded.\n\n"
-                      "Please upload transcript/audio/screenshots for analysis.",
-            "sources": []
-        }
-
-    # ✅ IMAGE WITH NO TEXT
-    if any(d.page_content == "NO_TEXT_IN_IMAGE" for d in docs):
-        return {
-            **state,
-            "answer": "🖼️ Image uploaded.\n\n"
-                      "No readable text detected in the image.\n\n"
-                      "👉 You can:\n"
-                      "• Upload clearer image\n"
-                      "• Provide description\n"
-                      "• Ask visual-related question",
-            "sources": []
-        }
-
-    # ✅ OCR FAILED
-    if any(d.page_content == "OCR_FAILED" for d in docs):
-        return {
-            **state,
-            "answer": "🖼️ Image uploaded.\n\n"
-                      "Text extraction failed.\n"
-                      "Try uploading a clearer image.",
-            "sources": []
-        }
-
-    # ✅ NORMAL FLOW
     context = "\n".join([d.page_content for d in docs])
+
+    session_id = state.get("session_id", "default")
+
+    memory = get_memory(session_id)
+
+    answer = generate_answer(state["query"], context, memory)
+
+    add_to_memory(session_id, state["query"], answer)
 
     return {
         **state,
-        "answer": generate_answer(state["query"], context),
+        "answer": answer,
         "sources": [d.metadata for d in docs]
     }
 
