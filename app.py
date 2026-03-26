@@ -12,7 +12,7 @@ st.set_page_config(page_title="Agentic RAG", layout="wide")
 
 st.title("🧠 Agentic RAG AI Assistant")
 
-# ✅ SESSION ID
+# Session init
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
 
@@ -38,25 +38,24 @@ if uploaded_file:
         docs = split_documents(docs)
 
         if not docs or all(not d.page_content.strip() for d in docs):
-            st.error("No readable content found")
+            st.error("❌ No readable content found in file")
             st.stop()
 
         vector_db = create_vector_store(docs, uploaded_file.name)
         retriever = HybridRetriever(docs, vector_db)
 
         st.session_state.retriever = retriever
-        st.success("File processed successfully")
+        st.success("✅ File processed successfully")
 
     except Exception as e:
-        st.error(f"Error: {str(e)}")
+        st.error(f"❌ Error: {str(e)}")
 
 # Chat
 query = st.chat_input("Ask something...")
 
 if query:
-
     if st.session_state.retriever is None:
-        st.warning("Upload a file first")
+        st.warning("⚠️ Upload a file first")
     else:
         st.chat_message("user").write(query)
 
