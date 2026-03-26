@@ -14,3 +14,7 @@ docx2txt
 langchain-text-splitters
 pillow
 pymupdf
+
+easyocr
+torch
+torchvision
