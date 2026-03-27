@@ -10,7 +10,7 @@ from workflow import build_graph
 
 st.set_page_config(page_title="Agentic RAG", layout="wide")
 
-st.title("🧠 Agentic RAG AI Assistant")
+st.title("🧠 Agentic RAG PoC for Intelligent Knowledge Retrieval")
 
 # -------------------------
 # SESSION INIT
@@ -31,18 +31,11 @@ if "file_processed" not in st.session_state:
 # -------------------------
 # FILE UPLOAD
 # -------------------------
-# uploaded_file = st.file_uploader(
-#     "Upload file",
-#     type=["pdf","docx","txt","csv","json","html","png","jpg","jpeg"]
-# )
 uploaded_file = st.file_uploader(
     "Upload file",
-    type=[
-        "pdf","docx","txt","csv","json","html",
-        "png","jpg","jpeg",
-        "mp4","avi","mov"   # ✅ ADD THIS
-    ]
+    type=["pdf","docx","txt","csv","json","html","png","jpg","jpeg"]
 )
+
 
 if uploaded_file and not st.session_state.file_processed:
 
