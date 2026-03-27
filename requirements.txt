@@ -19,3 +19,6 @@ easyocr
 torch
 torchvision
 moviepy
+SpeechRecognition
+pydub
+ffmpeg-python
