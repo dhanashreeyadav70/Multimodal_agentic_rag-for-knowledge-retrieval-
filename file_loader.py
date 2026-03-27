@@ -178,6 +178,41 @@ def load_file(file_path, filename):
 
         return documents
 
+    elif ext == ".pdf":
+        doc = fitz.open(file_path)
+        documents = []
+    
+        for i, page in enumerate(doc):
+    
+            # Try normal text extraction
+            text = page.get_text()
+    
+            # ✅ If text exists → use it
+            if text.strip():
+                documents.append(Document(
+                    page_content=text,
+                    metadata={"source": filename, "page": i, "type": "pdf"}
+                ))
+    
+            else:
+                # 🔥 OCR fallback
+                pix = page.get_pixmap()
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+    
+                img_np = np.array(img)
+    
+                ocr_result = reader.readtext(img_np)
+    
+                extracted_text = " ".join([t for (_, t, _) in ocr_result])
+    
+                if extracted_text.strip():
+                    documents.append(Document(
+                        page_content=extracted_text,
+                        metadata={"source": filename, "page": i, "type": "pdf_ocr"}
+                    ))
+    
+        return documents
+
     # ---------- TEXT ----------
     elif ext == ".txt":
         docs = TextLoader(file_path).load()
