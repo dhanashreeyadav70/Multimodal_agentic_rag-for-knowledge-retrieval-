@@ -14,12 +14,22 @@ def planner_agent(state):
 #         return {**state, "retrieved_docs": []}
 
 #     return {**state, "retrieved_docs": docs}
+# def retrieval_agent(state):
+
+#     docs = state["retriever"].search(state["query"])
+
+#     # ✅ If video present, skip retrieval logic
+#     if any(d.metadata.get("type") == "video" for d in docs):
+#         return {**state, "retrieved_docs": docs}
+
+#     return {**state, "retrieved_docs": docs or []}
+
 def retrieval_agent(state):
 
     docs = state["retriever"].search(state["query"])
 
-    # ✅ If video present, skip retrieval logic
-    if any(d.metadata.get("type") == "video" for d in docs):
+    # ✅ Skip reranking if audio/video (already semantic)
+    if any(d.metadata.get("type") in ["video", "audio"] for d in docs):
         return {**state, "retrieved_docs": docs}
 
     return {**state, "retrieved_docs": docs or []}
