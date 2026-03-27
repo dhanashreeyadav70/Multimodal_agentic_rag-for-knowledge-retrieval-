@@ -11,10 +11,133 @@ from langchain_community.document_loaders import (
 from langchain_core.documents import Document
 from ingestion import load_json
 
+import os
+import pandas as pd
+import fitz  # PyMuPDF
+import easyocr
+import numpy as np
+import speech_recognition as sr
+from moviepy.editor import VideoFileClip
+from langchain_community.document_loaders import (
+    TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
+)
+from langchain_core.documents import Document
+from ingestion import load_json
+
+
+
+# ✅ Speech recognizer
+recognizer = sr.Recognizer()
+
 # ✅ Initialize EasyOCR once
 reader = easyocr.Reader(['en'], gpu=False)
 
+# -----------------------------
+# 🎤 AUDIO TRANSCRIPTION
+# -----------------------------
+def transcribe_audio(file_path):
+    try:
+        with sr.AudioFile(file_path) as source:
+            audio = recognizer.record(source)
 
+        text = recognizer.recognize_google(audio)
+
+        return text
+
+    except Exception as e:
+        return f"Audio transcription failed: {str(e)}"
+# -----------------------------
+# 🎬 VIDEO → AUDIO → TEXT
+# -----------------------------
+def transcribe_video(file_path):
+    try:
+        video = VideoFileClip(file_path)
+
+        audio_path = file_path + "_temp.wav"
+        video.audio.write_audiofile(audio_path)
+
+        text = transcribe_audio(audio_path)
+
+        os.remove(audio_path)
+
+        return text
+
+    except Exception as e:
+        return f"Video transcription failed: {str(e)}"
+
+
+
+# def load_file(file_path, filename):
+
+#     ext = os.path.splitext(filename)[1].lower()
+
+#     # ---------- PDF ----------
+#     if ext == ".pdf":
+#         doc = fitz.open(file_path)
+#         documents = []
+
+#         for i, page in enumerate(doc):
+#             text = page.get_text()
+
+#             if text.strip():
+#                 documents.append(Document(
+#                     page_content=text,
+#                     metadata={"source": filename, "page": i}
+#                 ))
+
+#         return documents
+
+#     # ---------- TEXT ----------
+#     elif ext == ".txt":
+#         return TextLoader(file_path).load()
+
+#     elif ext == ".docx":
+#         return Docx2txtLoader(file_path).load()
+
+#     elif ext == ".html":
+#         return UnstructuredHTMLLoader(file_path).load()
+
+#     elif ext == ".json":
+#         return load_json(file_path)
+
+#     # ---------- CSV ----------
+#     elif ext == ".csv":
+#         df = pd.read_csv(file_path)
+
+#         documents = [Document(
+#             page_content=f"Columns: {', '.join(df.columns)}",
+#             metadata={"source": filename}
+#         )]
+
+#         for _, row in df.iterrows():
+#             row_text = ", ".join(
+#                 [f"{col}: {row[col]}" for col in df.columns if pd.notna(row[col])]
+#             )
+#             documents.append(Document(page_content=row_text))
+
+#         return documents
+
+#     # ---------- IMAGE (EasyOCR) ----------
+#     elif ext in [".png", ".jpg", ".jpeg"]:
+
+#         result = reader.readtext(file_path)
+
+#         extracted_text = " ".join([text for (_, text, _) in result])
+
+#         if not extracted_text.strip():
+#             extracted_text = "No text found in image"
+
+#         return [Document(
+#             page_content=extracted_text,
+#             metadata={"source": filename}
+#         )]
+
+#     else:
+#         raise ValueError(f"Unsupported file type: {ext}")
+
+# -----------------------------
+# 📂 MAIN LOADER
+# -----------------------------
 def load_file(file_path, filename):
 
     ext = os.path.splitext(filename)[1].lower()
@@ -30,23 +153,35 @@ def load_file(file_path, filename):
             if text.strip():
                 documents.append(Document(
                     page_content=text,
-                    metadata={"source": filename, "page": i}
+                    metadata={"source": filename, "page": i, "type": "pdf"}
                 ))
 
         return documents
 
     # ---------- TEXT ----------
     elif ext == ".txt":
-        return TextLoader(file_path).load()
+        docs = TextLoader(file_path).load()
+        for d in docs:
+            d.metadata["type"] = "text"
+        return docs
 
     elif ext == ".docx":
-        return Docx2txtLoader(file_path).load()
+        docs = Docx2txtLoader(file_path).load()
+        for d in docs:
+            d.metadata["type"] = "docx"
+        return docs
 
     elif ext == ".html":
-        return UnstructuredHTMLLoader(file_path).load()
+        docs = UnstructuredHTMLLoader(file_path).load()
+        for d in docs:
+            d.metadata["type"] = "html"
+        return docs
 
     elif ext == ".json":
-        return load_json(file_path)
+        docs = load_json(file_path)
+        for d in docs:
+            d.metadata["type"] = "json"
+        return docs
 
     # ---------- CSV ----------
     elif ext == ".csv":
@@ -54,7 +189,7 @@ def load_file(file_path, filename):
 
         documents = [Document(
             page_content=f"Columns: {', '.join(df.columns)}",
-            metadata={"source": filename}
+            metadata={"source": filename, "type": "csv"}
         )]
 
         for _, row in df.iterrows():
@@ -65,11 +200,10 @@ def load_file(file_path, filename):
 
         return documents
 
-    # ---------- IMAGE (EasyOCR) ----------
+    # ---------- IMAGE ----------
     elif ext in [".png", ".jpg", ".jpeg"]:
 
         result = reader.readtext(file_path)
-
         extracted_text = " ".join([text for (_, text, _) in result])
 
         if not extracted_text.strip():
@@ -77,9 +211,28 @@ def load_file(file_path, filename):
 
         return [Document(
             page_content=extracted_text,
-            metadata={"source": filename}
+            metadata={"source": filename, "type": "image"}
         )]
 
+    # ---------- AUDIO ----------
+    elif ext in [".wav", ".mp3"]:
+
+        text = transcribe_audio(file_path)
+
+        return [Document(
+            page_content=text,
+            metadata={"source": filename, "type": "audio"}
+        )]
+
+    # ---------- VIDEO ----------
+    elif ext in [".mp4", ".avi", ".mov"]:
+
+        text = transcribe_video(file_path)
+
+        return [Document(
+            page_content=text,
+            metadata={"source": filename, "type": "video"}
+        )]
 
     else:
         raise ValueError(f"Unsupported file type: {ext}")
