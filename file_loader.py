@@ -10,7 +10,7 @@ from langchain_community.document_loaders import (
 )
 from langchain_core.documents import Document
 from ingestion import load_json
-
+import speech_recognition as sr
 from faster_whisper import WhisperModel
 
 # ✅ Load once (global)
