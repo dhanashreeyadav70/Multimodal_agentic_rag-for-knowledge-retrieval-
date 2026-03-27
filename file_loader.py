@@ -11,19 +11,10 @@ from langchain_community.document_loaders import (
 from langchain_core.documents import Document
 from ingestion import load_json
 
-import os
-import pandas as pd
-import fitz  # PyMuPDF
-import easyocr
-import numpy as np
-import speech_recognition as sr
-from moviepy.editor import VideoFileClip
-from langchain_community.document_loaders import (
-    TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
-)
-from langchain_core.documents import Document
-from ingestion import load_json
+from faster_whisper import WhisperModel
 
+# ✅ Load once (global)
+whisper_model = WhisperModel("base", compute_type="int8")
 
 
 # ✅ Speech recognizer
@@ -32,20 +23,25 @@ recognizer = sr.Recognizer()
 # ✅ Initialize EasyOCR once
 reader = easyocr.Reader(['en'], gpu=False)
 
+
+
+
+
 # -----------------------------
-# 🎤 AUDIO TRANSCRIPTION
+# 🎤 AUDIO TRANSCRIPTION (WHISPER)
 # -----------------------------
 def transcribe_audio(file_path):
     try:
-        with sr.AudioFile(file_path) as source:
-            audio = recognizer.record(source)
+        segments, _ = whisper_model.transcribe(file_path)
 
-        text = recognizer.recognize_google(audio)
+        text = " ".join([segment.text for segment in segments])
 
-        return text
+        return text if text.strip() else "No speech detected"
 
     except Exception as e:
         return f"Audio transcription failed: {str(e)}"
+
+
 # -----------------------------
 # 🎬 VIDEO → AUDIO → TEXT
 # -----------------------------
@@ -65,7 +61,31 @@ def transcribe_video(file_path):
     except Exception as e:
         return f"Video transcription failed: {str(e)}"
 
+def transcribe_audio_chunks(file_path, chunk_length=60):
+    import ffmpeg
 
+    try:
+        output_pattern = "chunk_%03d.wav"
+
+        (
+            ffmpeg
+            .input(file_path)
+            .output(output_pattern, f='segment', segment_time=chunk_length)
+            .run(quiet=True, overwrite_output=True)
+        )
+
+        texts = []
+
+        for file in sorted(os.listdir()):
+            if file.startswith("chunk_") and file.endswith(".wav"):
+                segments, _ = whisper_model.transcribe(file)
+                texts.append(" ".join([s.text for s in segments]))
+                os.remove(file)
+
+        return " ".join(texts)
+
+    except Exception as e:
+        return f"Chunk transcription failed: {str(e)}"
 
 # def load_file(file_path, filename):
 
