@@ -31,9 +31,19 @@ if "file_processed" not in st.session_state:
 # -------------------------
 # FILE UPLOAD
 # -------------------------
+# uploaded_file = st.file_uploader(
+#     "Upload file",
+#     type=["pdf","docx","txt","csv","json","html","png","jpg","jpeg"]
+# )
+
 uploaded_file = st.file_uploader(
     "Upload file",
-    type=["pdf","docx","txt","csv","json","html","png","jpg","jpeg"]
+    type=[
+        "pdf","docx","txt","csv","json","html",
+        "png","jpg","jpeg",
+        "mp4","avi","mov",
+        "mp3","wav"   # ✅ ADD THIS
+    ]
 )
 
 
