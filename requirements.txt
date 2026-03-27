@@ -14,11 +14,13 @@ docx2txt
 langchain-text-splitters
 pillow
 pymupdf
-SpeechRecognition
+
 easyocr
 torch
 torchvision
 moviepy
 SpeechRecognition
 pydub
+
+faster-whisper
 ffmpeg-python
