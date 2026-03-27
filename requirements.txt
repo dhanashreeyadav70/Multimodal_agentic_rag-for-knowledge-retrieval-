@@ -18,3 +18,4 @@ SpeechRecognition
 easyocr
 torch
 torchvision
+moviepy
