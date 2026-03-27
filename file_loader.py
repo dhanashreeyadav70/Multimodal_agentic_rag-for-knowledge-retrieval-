@@ -3,7 +3,7 @@ import pandas as pd
 from PIL import Image
 import fitz  # PyMuPDF
 import easyocr
-
+import numpy as np
 from moviepy.editor import VideoFileClip
 from langchain_community.document_loaders import (
     TextLoader, Docx2txtLoader, UnstructuredHTMLLoader
